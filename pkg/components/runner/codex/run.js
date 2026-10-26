@@ -236,12 +236,32 @@ function codexSessionIDFromEvent(event) {
   ).trim();
 }
 
+// Codex starts stdio MCP servers without the task environment. The SuperPlane
+// MCP scripts read their base URL, run token, artifact token, and task
+// directory from SUPERPLANE_* variables, so pass those values explicitly.
+// Without this, every publish tool fails with "SUPERPLANE_BASE_URL is required".
+function superplaneMCPEnvOverrides(env = process.env) {
+  const names = Object.keys(env || {})
+    .filter((name) => name.startsWith("SUPERPLANE_"))
+    .sort();
+  const overrides = [];
+  for (const name of names) {
+    const value = String(env[name] ?? "").trim();
+    if (!value) {
+      continue;
+    }
+    overrides.push("-c", `mcp_servers.superplane.env.${name}=${tomlString(value)}`);
+  }
+  return overrides;
+}
+
 function mcpConfigOverrides(mcpScriptPath, env = process.env) {
   return [
     "-c",
     `mcp_servers.superplane.command=${tomlString("node")}`,
     "-c",
     `mcp_servers.superplane.args=${tomlStringArray([mcpScriptPath])}`,
+    ...superplaneMCPEnvOverrides(env),
     // Codex 0.144.5 requests MCP approval for unannotated tools. Exec cannot
     // answer that prompt, so approve only these planning tools, not shell writes.
     ...(planningEnabled(env)

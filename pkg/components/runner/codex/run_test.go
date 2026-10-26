@@ -60,6 +60,32 @@ func TestCodexExecArgsAddsOpenAIBaseURLOverride(t *testing.T) {
 	assert.Contains(t, strings.Join(args, " "), `openai_base_url="https://proxy.example/v1"`)
 }
 
+func TestCodexExecArgsPassSuperplaneEnvToTheMCP(t *testing.T) {
+	args := codexExecArgsFromScript(t, map[string]string{
+		"SUPERPLANE_PLANNING_SESSION_ID":   "session-1",
+		"SUPERPLANE_PLANNING_SESSION_KIND": "work_order_analysis",
+		"SUPERPLANE_BASE_URL":              "http://app:8000",
+		"SUPERPLANE_RUN_TOKEN":             "run-token",
+		"SUPERPLANE_TASK_DIR":              "/home/node/.superplane/tasks/task-1",
+		"OTHER":                            "not-exported",
+	}, "gpt-5", "/task/planning_session_mcp.js")
+
+	joined := strings.Join(args, " ")
+	assert.Contains(t, joined, `mcp_servers.superplane.env.SUPERPLANE_BASE_URL="http://app:8000"`)
+	assert.Contains(t, joined, `mcp_servers.superplane.env.SUPERPLANE_RUN_TOKEN="run-token"`)
+	assert.Contains(t, joined, `mcp_servers.superplane.env.SUPERPLANE_TASK_DIR="/home/node/.superplane/tasks/task-1"`)
+	assert.NotContains(t, joined, "OTHER")
+}
+
+func TestCodexExecArgsSkipEmptySuperplaneEnvForTheMCP(t *testing.T) {
+	args := codexExecArgsFromScript(t, map[string]string{
+		"SUPERPLANE_PLANNING_SESSION_ID": "session-1",
+		"SUPERPLANE_BASE_URL":            "  ",
+	}, "gpt-5", "/task/planning_session_mcp.js")
+
+	assert.NotContains(t, strings.Join(args, " "), "mcp_servers.superplane.env.SUPERPLANE_BASE_URL")
+}
+
 func TestCodexExecEnvCopiesOpenAIAPIKey(t *testing.T) {
 	env := codexExecEnvFromScript(t, map[string]string{
 		"OPENAI_API_KEY": "sk-from-openai",
