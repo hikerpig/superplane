@@ -14,7 +14,6 @@ const (
 	ComponentName     = "runnerCodex"
 	FinishedEventType = "runnerCodex.finished"
 	envOpenAIAPIKey   = "OPENAI_API_KEY"
-	envOpenAIBaseURL  = "OPENAI_BASE_URL"
 )
 
 func init() {
@@ -58,6 +57,7 @@ func (c *RunCodex) Documentation() string {
 ## Prerequisites
 - The ` + "`codex`" + ` CLI is installed on the runner machine and available on ` + "`PATH`" + `.
 - An OpenAI API key stored as a SuperPlane secret or an OpenAI integration.
+- An OpenAI integration with a custom **Base URL** also sets ` + "`OPENAI_BASE_URL`" + `, so Codex calls that OpenAI-compatible endpoint instead of api.openai.com.
 
 ## Steps
 Configure an ordered list of **bash** and **prompt** steps:
